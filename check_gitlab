@@ -31,12 +31,15 @@ def check_module(readiness_json, module):
 
 def check_all(readiness_json):
     results = dict()
-    results["db_check"] = check_module(readiness_json, "db_check")
-    results["redis_check"] = check_module(readiness_json, "redis_check")
     results["cache_check"] = check_module(readiness_json, "cache_check")
-    results["queues_check"] = check_module(readiness_json, "queues_check")
-    results["shared_state_check"] = check_module(readiness_json, "shared_state_check")
+    results["db_check"] = check_module(readiness_json, "db_check")
     results["gitaly_check"] = check_module(readiness_json, "gitaly_check")
+    results["queues_check"] = check_module(readiness_json, "queues_check")
+    results["rate_limiting_check"] = check_module(readiness_json, "rate_limiting_check")
+    results["redis_check"] = check_module(readiness_json, "redis_check")
+    results["sessions_check"] = check_module(readiness_json, "sessions_check")
+    results["shared_state_check"] = check_module(readiness_json, "shared_state_check")
+    results["trace_chunks_check"] = check_module(readiness_json, "trace_chunks_check")
 
     return results
 
@@ -49,8 +52,11 @@ def parse_arguments(argv):
     argument_map["--check-db"] = 0
     argument_map["--check-gitaly"] = 0
     argument_map["--check-queues"] = 0
+    argument_map["--check-rate-limiting"] = 0
     argument_map["--check-redis"] = 0
+    argument_map["--check-sessions"] = 0
     argument_map["--check-shared-state"] = 0
+    argument_map["--check-trace-chunks"] = 0
 
     prev_argument = ""
 
@@ -72,23 +78,26 @@ def parse_arguments(argv):
     return argument_map
 
 def print_usage():
-    print("Usage: " + program_name + " -s <server_url> [-h] [---check-all] [--check-cache] [--check-db] [--check-gitaly] [--check-queues] [--check-redis] [--check-shared-state]")
+    print("Usage: " + program_name + " -s <server_url> [-h] [---check-all] [--check-cache] [--check-db] [--check-gitaly] [--check-queues] [--check-rate-limiting] [--check-redis] [--check-sessions] [--check-shared-state] [--check-trace-chunks]")
 
 def print_help():
     print("Copyright (c) 2019 Kevin Krumbiegel")
     print("\n")
     print_usage();
     print("\n");
-    print("-s <server_url>      = URL of the server to be checked. (i.e. https://gitlab.example.org/)")
-    print("-h                   = This screen")
+    print("-s <server_url>       = URL of the server to be checked. (i.e. https://gitlab.example.org/)")
+    print("-h                    = This screen")
     print("Checks:")
-    print("--check-all          = Enable all checks")
-    print("--check-cache        = Enable checking cache status")
-    print("--check-db           = Enable checking database status")
-    print("--check-gitaly       = Enable checking gitaly status")
-    print("--check-queues       = Enable checking queues status")
-    print("--check-redis        = Enable checking redis status")
-    print("--check-shared-state = Enable checking shared state status")
+    print("--check-all           = Enable all checks")
+    print("--check-cache         = Enable checking cache status")
+    print("--check-db            = Enable checking database status")
+    print("--check-gitaly        = Enable checking gitaly status")
+    print("--check-queues        = Enable checking queues status")
+    print("--check-rate-limiting = Enable checking rate limiting status")
+    print("--check-redis         = Enable checking redis status")
+    print("--check-sessions        = Enable checking sessions status")
+    print("--check-shared-state  = Enable checking shared state status")
+    print("--check-trace-chunks        = Enable checking trace chunks status")
     print("\n")
 
 def run_checks(arguments):
@@ -120,12 +129,30 @@ def run_checks(arguments):
             print("Queues check: Status=" + str(checks["queues_check"][0]) + ", Message=" + str(checks["queues_check"][1]))
             result = 2
 
+    if arguments["--check-rate-limiting"] or arguments["--check-all"]:
+        checks_done += 1
+        if str(checks["rate_limiting_check"][0]) != "ok":
+            print("Rate-limiting check: Status=" + str(checks["rate_limiting_check"][0]) + ", Message=" + str(checks["rate_limiting_check"][1]))
+            result = 2
+            
     if arguments["--check-redis"] or arguments["--check-all"]:
         checks_done += 1
         if str(checks["redis_check"][0]) != "ok":
             print("Redis check: Status=" + str(checks["redis_check"][0]) + ", Message=" + str(checks["redis_check"][1]))
             result = 2
-
+            
+    if arguments["--check-sessions"] or arguments["--check-all"]:
+        checks_done += 1
+        if str(checks["sessions_check"][0]) != "ok":
+            print("Sessions check: Status=" + str(checks["sessions_check"][0]) + ", Message=" + str(checks["sessions_check"][1]))
+            result = 2
+            
+    if arguments["--check-trace-chunks"] or arguments["--check-all"]:
+        checks_done += 1
+        if str(checks["trace_chunks_check"][0]) != "ok":
+            print("Trace chunks check: Status=" + str(checks["trace_chunks_check"][0]) + ", Message=" + str(checks["trace_chunks_check"][1]))
+            result = 2
+            
     if arguments["--check-shared-state"] or arguments["--check-all"]:
         checks_done += 1
         if str(checks["shared_state_check"][0]) != "ok":
